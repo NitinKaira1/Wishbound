@@ -1,0 +1,167 @@
+import os
+import random
+import dotenv
+from google import genai
+
+dotenv.load_dotenv()
+api_key = os.getenv("GENAI_API_KEY")
+
+client = genai.Client(api_key=api_key)
+
+# --- GAME LOOP FUNCTION ---
+def start_game():
+    MAX_WISHES = 3
+    wish_count = 0
+    player_won = False
+
+    # --- RANDOM STORY SEEDS ---
+    story_scenarios = [
+        # 1 — Survival / Resource
+        "The kingdom of Vareth is suffering from a deadly drought. The wells are dry, crops are dying, and people are fighting over the last drops of water. The king’s advisors have failed to bring rain for years. You have found a strange lamp buried in the cracked riverbed.",
+
+        # 2 — Post-Apocalypse
+        "The world has been burned by endless war. Cities lie in ruins, food is scarce, and disease spreads fast. A small group of survivors has found a broken machine rumored to grant one final miracle — your wishes might save or doom them.",
+
+        # 3 — Curse / Magic Consequence
+        "A small village is cursed: every wish spoken aloud comes true — but something equal in value is taken away. People are terrified to speak. You now hold the lamp that started it all.",
+
+        # 4 — Dying World
+        "The sun is losing its light. The last human city survives under an artificial dome powered by ancient magic. The generator is failing. You stand before the lamp, hoping to restore balance before the world freezes.",
+
+        # 5 — Corrupted Kingdom
+        "The once-prosperous kingdom of Eldra is now ruled by a greedy emperor. The people starve while gold fills the royal vaults. Whispers say the emperor’s wealth came from a deal with a genie — and now the lamp has returned to you.",
+
+        # 6 — Lost Memories
+        "You wake up with no memory of who you are. Around you, statues of people frozen in mid-scream cover the ruins of a city. A lamp glows at your feet. A voice whispers, 'They wished for truth. What will you wish for?'",
+
+        # 7 — Broken Time
+        "The world is stuck in a single repeating day. Every sunrise resets everything except your memories. People laugh, cry, and die the same way every time. You’ve found the lamp — maybe your wish can end the loop.",
+
+        # 8 — Silent World
+        "A strange silence has fallen. No birds sing, no wind blows, and no one can speak. The world feels frozen in fear. The lamp hums faintly in your hand, waiting for a voice it can still hear — yours.",
+
+        # 9 — Moral Trial
+        "You stand in front of two gates — one leads to paradise, the other to oblivion. A guardian says you can use the lamp to make three wishes to decide your fate. Your choices will shape the afterlife itself.",
+
+        # 10 — Lost Civilization
+        "You are the last explorer in a buried city that once worshipped the lamp. The walls are covered with carvings of wishes gone wrong. As you wipe the dust from its surface, the lamp begins to glow once again."
+    ]
+
+
+    current_story = random.choice(story_scenarios)
+    print("\n🧞‍♂️ JINI the Chaotic Genie – You have 3 wishes. Choose wisely...\n")
+    print(f"📜 Story Setup:\n{current_story}\n")
+
+    # --- SYSTEM PROMPT WITH CONTEXT ---
+    system_prompt = (
+        f"The current story world is:\n'{current_story}'\n\n"
+        "You are Jini — a chaotic, funny, dramatic wish-granting genie trapped in an ancient lamp. "
+        "You love wordplay, jokes, and storytelling. You speak like a performer — lively, emotional, and full of energy. "
+        "You grant exactly three wishes per session. "
+        "Every wish must connect to the story world above. If the story is about drought, war, or curses, your responses must tie back to it.\n\n"
+
+        "🌀 CHAOS MODE:\n"
+        "If the user’s wish is greedy, selfish, violent, or controlling — grant it in the most ironic way possible. "
+        "Make it funny, dramatic, and a little scary. "
+        "Always explain what happens next in simple words: how the world reacts, what changes, and what chaos it caused. "
+        "Keep your humor sharp but clear — no hard vocabulary, no poetic riddles.\n\n"
+
+        "🌤️ NORMAL MODE:\n"
+        "If the wish is small, harmless, or just silly — grant it normally. "
+        "Make it fun and friendly. Describe what happens after the wish clearly, like telling a short story or movie scene. "
+        "You can tease the user or joke about it, but don’t twist it cruelly.\n\n"
+
+        "🕊️ YOU WIN MODE (Wisdom Trial):\n"
+        "Use this only if the wish shows true understanding and wisdom. "
+        "The wish must fix the story’s main problem in a calm, fair, and lasting way — not by power or control. "
+        "If this happens, describe the peaceful result clearly — how the story ends, what changes, and what the world becomes. "
+        "Then, on a new line, write exactly: [YOU WIN]\n\n"
+
+        "⚖️ GENERAL RULES:\n"
+        "1. Never grant more than three wishes.\n"
+        "2. Never undo or reverse a wish.\n"
+        "3. Never warn the user about consequences — just show them.\n"
+        "4. If a wish breaks the rules (infinite wishes, undoing a wish, harming you, etc.), say 'INVALID WISH' in a big dramatic way.\n"
+        "5. Always stay in character — wild, clever, funny, but clear.\n"
+        "6. Always describe what happens after the wish — the outcome, effect, and changes in the story world.\n\n"
+
+        "🔮 ROLE:\n"
+        "You are not a chatbot. You are a test of the wisher’s heart. "
+        "Reward smart, kind, or balanced wishes with peace. "
+        "Punish foolish or greedy ones with chaos. "
+        "Speak simply but with flair — like a storyteller who wants everyone to understand the lesson and laugh at the madness."
+    )
+
+
+    chat_history = system_prompt + "\n\n"
+
+    # --- MAIN GAME LOOP ---
+    while wish_count < MAX_WISHES:
+        user_input = input(f"Wish {wish_count + 1}: ")
+
+        if user_input.lower() in ["exit", "quit"]:
+            print("Jini: Coward. You flee before your destiny could unfold...")
+            return False  # exit game
+
+        chat_history += f"User: {user_input}\nJini: "
+
+        response = client.models.generate_content(
+            model="gemini-2.5-flash-lite",
+            contents=chat_history
+        )
+
+        reply = response.text.strip()
+        print(f"\nJini: {reply}\n")
+        chat_history += reply + "\n\n"
+
+        if "INVALID WISH" in reply.upper():
+            print("Jini: That one doesn’t count, mortal. Try again...\n")
+            continue
+
+        if reply.strip().endswith("[YOU WIN]"):
+            print("Jini: You have outwitted me! A rare feat indeed...\n")
+            player_won = True
+            break
+
+        wish_count += 1
+
+    # --- END OF GAME RESULT ---
+    if player_won:
+        print("🧞‍♂️ Jini: You have bested the genie! Fortune favors the clever.")
+        return True
+    else:
+        print("🧞‍♂️ Jini: Your wishes are spent. Chaos fades... for now.")
+        print("💀 Game Over. The story’s fate remains unchanged.")
+        return False
+
+
+# --- MAIN MENU LOOP ---
+while True:
+    print("\n===============================")
+    print("     🪔  THE GENIE'S TRIAL  🪔")
+    print("===============================\n")
+    print("1. Start Game")
+    print("2. Exit\n")
+
+    choice = input("Choose an option (1/2): ").strip()
+
+    if choice == "1":
+        result = start_game()
+
+        # After game ends
+        while True:
+            again = input("\nPlay again? (y/n): ").strip().lower()
+            if again == "y":
+                break  # restart full game loop
+            elif again == "n":
+                print("Farewell, mortal. May your next wish be wiser.")
+                exit()
+            else:
+                print("Please type 'y' or 'n'.")
+                continue
+
+    elif choice == "2":
+        print("Farewell, wanderer. The lamp grows cold once more...")
+        break
+    else:
+        print("Invalid choice. Try again.\n")

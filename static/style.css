@@ -1,0 +1,15 @@
+body { font-family: Arial, sans-serif; background:#0f1720; color:#e6eef8; }
+.container { width: 720px; margin: 24px auto; padding: 18px; background:#111827; border-radius:8px; box-shadow: 0 6px 18px rgba(0,0,0,0.6); }
+h1 { text-align:center; margin-bottom: 10px; }
+.story { background:#0b1220; padding:12px; border-radius:6px; margin-bottom:12px; min-height:48px; }
+.chat { background:#08101a; padding:12px; height:320px; overflow:auto; border-radius:6px; margin-bottom:12px; }
+.msg { margin:8px 0; white-space:pre-wrap; }
+.you { color:#a6e3a1; }
+.jini { color:#ffd580; }
+.controls { display:flex; gap:8px; align-items:center; }
+input { flex:1; padding:8px; border-radius:6px; border:1px solid #223; background:#0b1620; color:#fff; }
+button { padding:8px 12px; border-radius:6px; background:#1f6feb; border:none; color:#fff; cursor:pointer; }
+.status { margin-left:10px; color:#9aa; }
+.info { color:#9ad; }
+.win { color:#8ef; font-weight:bold; }
+.error { color:#ff7b7b; }

@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Wishbound</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>🧞‍♂️ Jini the Genie</h1>
+    <div id="storyBox" class="story"></div>
+
+    <div id="chat" class="chat"></div>
+
+    <div class="controls">
+      <input id="wishInput" placeholder="Type your wish..." />
+      <button id="wishBtn">Wish</button>
+      <button id="restartBtn">Restart</button>
+      <div id="status" class="status"></div>
+    </div>
+  </div>
+
+<script>
+let wishCount = 0;
+let waiting = false;
+
+function addMsg(text, className="msg") {
+  const d = document.createElement("div");
+  d.className = className;
+  d.textContent = text;
+  document.getElementById("chat").appendChild(d);
+  document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
+}
+
+async function startGame() {
+  const res = await fetch("/start", { method: "POST" });
+  const data = await res.json();
+  document.getElementById("storyBox").innerText = data.story;
+  document.getElementById("chat").innerHTML = "";
+  wishCount = 0;
+  document.getElementById("status").innerText = "Wishes left: 3";
+}
+
+async function sendWish() {
+  if (waiting) return;
+  const input = document.getElementById("wishInput");
+  const wish = input.value.trim();
+  if (!wish) return;
+  addMsg("You: " + wish, "you");
+  input.value = "";
+  waiting = true;
+  document.getElementById("status").innerText = "Waiting for Jini...";
+
+  const res = await fetch("/wish", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ wish })
+  });
+  const data = await res.json();
+  if (data.error) {
+    addMsg("Error: " + data.error, "error");
+    waiting = false;
+    return;
+  }
+  // show Jini reply with simple typing effect
+  await typeOut("Jini: " + data.reply);
+  if (data.status === "invalid") {
+    addMsg("Jini: That one doesn't count. Try again.", "info");
+  } else if (data.status === "win") {
+    addMsg("🧞‍♂️ You win! The session ends.", "win");
+  } else {
+    wishCount = data.wish_count;
+    const left = Math.max(0, 3 - wishCount);
+    document.getElementById("status").innerText = "Wishes left: " + left;
+    if (data.status === "spent") {
+      addMsg("🧞‍♂️ Jini: Your wishes are spent.", "info");
+    }
+  }
+  waiting = false;
+}
+
+async function typeOut(text) {
+  const div = document.createElement("div");
+  div.className = "msg";
+  document.getElementById("chat").appendChild(div);
+  for (let i = 0; i < text.length; i++) {
+    div.textContent = text.slice(0, i+1);
+    await new Promise(r => setTimeout(r, 8));
+  }
+  document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
+}
+
+document.getElementById("wishBtn").addEventListener("click", sendWish);
+document.getElementById("restartBtn").addEventListener("click", async () => {
+  await fetch("/restart", { method: "POST" });
+  startGame();
+});
+
+document.getElementById("wishInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") sendWish();
+});
+
+// Start on load
+startGame();
+</script>
+</body>
+</html>
